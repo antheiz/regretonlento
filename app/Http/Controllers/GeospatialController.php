@@ -9,7 +9,7 @@ class GeospatialController extends Controller
 {
     public function getDistricts()
     {
-        $districts = DB::select("SELECT distrik_id, nama_distrik, ST_AsGeoJSON(peta_distrik) AS geojson FROM distriks");
+        $districts = DB::select("SELECT distrik_id, nama_distrik, nama_kepala_distrik, ST_AsGeoJSON(peta_distrik) AS geojson FROM distriks");
         return response()->json($this->createGeoJSON($districts, true));
     }
 
@@ -31,7 +31,7 @@ class GeospatialController extends Controller
     {
         $features = array_map(function ($item) use ($isDistrict) {
             $properties = $isDistrict
-                ? ['distrik_id' => $item->distrik_id, 'name' => $item->nama_distrik]
+                ? ['distrik_id' => $item->distrik_id, 'name' => $item->nama_distrik, 'nama_kepala_distrik' => $item->nama_kepala_distrik]
                 : ['desa_id' => $item->desa_id, 'distrik_id' => $item->distrik_id, 'name' => $item->nama_desa];
 
             return [
