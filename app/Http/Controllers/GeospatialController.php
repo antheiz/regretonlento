@@ -10,9 +10,9 @@ class GeospatialController extends Controller
     public function getDistricts()
     {
         $query = "
-        SELECT d.id, d.nama_distrik, ST_AsGeoJSON(d.peta_distrik) AS geojson, SUM(de.jumlah_penduduk) AS total_penduduk
+        SELECT d.id, d.nama_distrik, ST_AsGeoJSON(d.peta_distrik) AS geojson, SUM(de.jumlah_penduduk) AS jumlah_penduduk
         FROM distriks d
-        LEFT JOIN desas de ON d.id = de.id
+        LEFT JOIN desas de ON d.id = de.distrik_id
         GROUP BY d.id, d.nama_distrik, d.peta_distrik
     ";
         $districts = DB::select($query);
@@ -22,7 +22,7 @@ class GeospatialController extends Controller
     public function getVillages(Request $request)
     {
         $districtId = $request->query('districtId');
-        $query = "SELECT id, distrik_id, nama_desa, ST_AsGeoJSON(peta_desa) AS geojson FROM desas";
+        $query = "SELECT id, distrik_id, nama_desa, jumlah_penduduk, ST_AsGeoJSON(peta_desa) AS geojson FROM desas";
         if ($districtId) {
             $query .= " WHERE distrik_id = ?";
             $villages = DB::select($query, [$districtId]);
@@ -41,11 +41,14 @@ class GeospatialController extends Controller
             ];
 
             if ($isDistrict) {
+                // distrik
                 $properties['id'] = $item->id;
-                $properties['total_penduduk'] = $item->total_penduduk; // Menambahkan total penduduk
+                $properties['jumlah_penduduk'] = $item->jumlah_penduduk;
             } else {
+                // desa
                 $properties['id'] = $item->id;
                 $properties['distrik_id'] = $item->distrik_id;
+                $properties['jumlah_penduduk'] = $item->jumlah_penduduk;
             }
 
             return [
