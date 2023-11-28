@@ -34,7 +34,7 @@
 
                 // Membuat permintaan data kampung untuk setiap distrik
                 const villagePromises = districts.features.map(geometry => {
-                    const districtId = geometry.properties.distrik_id;
+                    const districtId = geometry.properties.id;
                     return fetch(`/api/villages?districtId=${districtId}`);
                 });
 
@@ -43,7 +43,7 @@
 
                 // Konversi response ke json dan simpan dalam objek kampung
                 const jsonPromises = responses.map(async (response, index) => {
-                    const districtId = districts.features[index].properties.distrik_id;
+                    const districtId = districts.features[index].properties.id;
                     villages[districtId] = await response.json();
                 });
 
@@ -84,14 +84,14 @@
                 series: [{
                     data: districts.features.map(feature => {
                         return {
-                            distrik_id: feature.properties.distrik_id,
+                            id: feature.properties.id,
                             name: feature.properties.name,
-                            value: (feature.properties.distrik_id * 12345) % 100,
-                            drilldown: feature.properties.distrik_id // Menambahkan referensi drilldown
+                            value: (feature.properties.id * 12345) % 100,
+                            drilldown: feature.properties.id // Menambahkan referensi drilldown
                         };
                     }),
                     mapData: districts,
-                    joinBy: 'distrik_id',
+                    joinBy: 'id',
                     name: 'Kabupaten',
                     states: {
                         hover: {
@@ -111,19 +111,19 @@
                     },
                     mapZooming: true,
                     series: districts.features.map(feature => {
-                        const districtId = feature.properties.distrik_id;
+                        const districtId = feature.properties.id;
                         return {
                             id: districtId,
                             name: feature.properties.name,
                             mapData: villages[districtId],
                             data: villages[districtId].features.map(feature => {
                                 return {
-                                    desa_id: feature.properties.desa_id,
+                                    id: feature.properties.id,
                                     name: feature.properties.name,
-                                    value: (feature.properties.desa_id * 12345) % 100,
+                                    value: (feature.properties.id * 12345) % 100,
                                 };
                             }),
-                            joinBy: 'desa_id'
+                            joinBy: 'id'
                         };
                     }),
                 },

@@ -9,14 +9,20 @@ class GeospatialController extends Controller
 {
     public function getDistricts()
     {
-        $districts = DB::select("SELECT distrik_id, nama_distrik, nama_kepala_distrik, ST_AsGeoJSON(peta_distrik) AS geojson FROM distriks");
+        $query = "
+        SELECT d.id, d.nama_distrik, ST_AsGeoJSON(d.peta_distrik) AS geojson, SUM(de.jumlah_penduduk) AS total_penduduk
+        FROM distriks d
+        LEFT JOIN desas de ON d.id = de.id
+        GROUP BY d.id, d.nama_distrik, d.peta_distrik
+    ";
+        $districts = DB::select($query);
         return response()->json($this->createGeoJSON($districts, true));
     }
 
     public function getVillages(Request $request)
     {
         $districtId = $request->query('districtId');
-        $query = "SELECT desa_id, distrik_id, nama_desa, ST_AsGeoJSON(peta_desa) AS geojson FROM desas";
+        $query = "SELECT id, distrik_id, nama_desa, ST_AsGeoJSON(peta_desa) AS geojson FROM desas";
         if ($districtId) {
             $query .= " WHERE distrik_id = ?";
             $villages = DB::select($query, [$districtId]);
@@ -30,9 +36,17 @@ class GeospatialController extends Controller
     private function createGeoJSON($data, $isDistrict = false)
     {
         $features = array_map(function ($item) use ($isDistrict) {
-            $properties = $isDistrict
-                ? ['distrik_id' => $item->distrik_id, 'name' => $item->nama_distrik, 'nama_kepala_distrik' => $item->nama_kepala_distrik]
-                : ['desa_id' => $item->desa_id, 'distrik_id' => $item->distrik_id, 'name' => $item->nama_desa];
+            $properties = [
+                'name' => $item->nama_distrik ?? $item->nama_desa,
+            ];
+
+            if ($isDistrict) {
+                $properties['id'] = $item->id;
+                $properties['total_penduduk'] = $item->total_penduduk; // Menambahkan total penduduk
+            } else {
+                $properties['id'] = $item->id;
+                $properties['distrik_id'] = $item->distrik_id;
+            }
 
             return [
                 'type' => 'Feature',
@@ -43,6 +57,7 @@ class GeospatialController extends Controller
 
         return ['type' => 'FeatureCollection', 'features' => $features];
     }
+
 
 
 
